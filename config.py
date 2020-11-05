@@ -27,6 +27,7 @@ class ConfigFile(metaclass=ConfigFileMeta):
     _elements: dict
 
     type_to_str = {
+        bool: "bool",
         int: "int",
         str: "str",
         list: "list",
@@ -55,12 +56,14 @@ class ConfigFile(metaclass=ConfigFileMeta):
                     attr_type = self.str_to_type[_attr[0][0]]
 
                     if _attr[0][1]:
-                        attr = _attr[0][1]
+                        attr: str = _attr[0][1]
 
                         if attr_type in [list, dict]:
                             element.attr = json.loads(attr)
                         elif attr_type in [int]:
                             element.attr = int(attr)
+                        elif attr_type in [bool]:
+                            element.attr = True if attr.casefold() in ["true", "1"] else False
                         else:
                             element.attr = attr
                     else:
@@ -85,6 +88,8 @@ class ConfigFile(metaclass=ConfigFileMeta):
                     if element.type in [list, dict]:
                         attr = json.dumps(attr)
                     elif element.type in [int]:
+                        attr = str(attr)
+                    elif element.type in [bool]:
                         attr = str(attr)
                     else:
                         attr = str(attr)
