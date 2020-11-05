@@ -49,19 +49,20 @@ class ConfigFile(metaclass=ConfigFileMeta):
             cfgContent = cfg.read()
 
             for element in self._elements.values():
-                attr_type = re.findall(f'{element.name}\[({self.type_to_str[element.type]})\]', cfgContent)
+                _attr = re.findall(f' *?{element.name} *?\[ *?({self.type_to_str[element.type]}) *?\][ =]*(.*);\n', cfgContent)
 
-                if attr_type:
-                    attr = re.findall(f'{element.name}\[{self.type_to_str[element.type]}\] = (.*);\n', cfgContent)
-                    attr_type = self.str_to_type[attr_type[0]]
+                if _attr:
+                    attr_type = self.str_to_type[_attr[0][0]]
 
-                    if attr:
+                    if _attr[0][1]:
+                        attr = _attr[0][1]
+
                         if attr_type in [list, dict]:
-                            element.attr = json.loads(attr[0])
+                            element.attr = json.loads(attr)
                         elif attr_type in [int]:
-                            element.attr = int(attr[0])
+                            element.attr = int(attr)
                         else:
-                            element.attr = attr[0]
+                            element.attr = attr
                     else:
                         element.attr = None
 
@@ -79,6 +80,7 @@ class ConfigFile(metaclass=ConfigFileMeta):
 
                 if attr is None:
                     cfg.write(f'{element.name}[{attr_type}];\n')
+
                 else:
                     if element.type in [list, dict]:
                         attr = json.dumps(attr)
@@ -129,7 +131,7 @@ class ConfigFile(metaclass=ConfigFileMeta):
 
 class ConfigElement:
     def __init__(self, name: str=None, default=None, type: Union[int, str, list, dict]=str):
-        self.name = name
+        self.name = None if name is None else re.sub('[^A-Za-z0-9_]', '', name)
         self.type = _type(default) if default else type
         self.attr = default
 
