@@ -4,6 +4,8 @@ from typing import Union
 __all__ = ["ConfigFile", "ConfigElement"]
 _type = type
 
+END_STRING = ";\t\n"
+
 class ConfigFileMeta(type):
     def __new__(metacls, cls, bases, classdict):
         if bases:
@@ -50,7 +52,7 @@ class ConfigFile(metaclass=ConfigFileMeta):
             cfgContent = cfg.read()
 
             for element in self._elements.values():
-                _attr = re.findall(f' *?{element.name} *?\[ *?({self.type_to_str[element.type]}) *?\][ =]*(.*);\n', cfgContent)
+                _attr = re.findall(f' *?{element.name} *?\[ *?({self.type_to_str[element.type]}) *?\][ =]*(.*){END_STRING}', cfgContent)
 
                 if _attr:
                     attr_type = self.str_to_type[_attr[0][0]]
@@ -82,7 +84,7 @@ class ConfigFile(metaclass=ConfigFileMeta):
                 attr_type = self.type_to_str[element.type]
 
                 if attr is None:
-                    cfg.write(f'{element.name}[{attr_type}];\n')
+                    cfg.write(f'{element.name}[{attr_type}]{END_STRING}')
 
                 else:
                     if element.type in [list, dict]:
@@ -94,7 +96,7 @@ class ConfigFile(metaclass=ConfigFileMeta):
                     else:
                         attr = str(attr)
 
-                    cfg.write(f'{element.name}[{attr_type}] = {attr};\n')
+                    cfg.write(f'{element.name}[{attr_type}] = {attr}{END_STRING}')
 
     def __setattr__(self, key, value):
         if key in self._elements:
@@ -137,7 +139,7 @@ class ConfigFile(metaclass=ConfigFileMeta):
 class ConfigElement:
     def __init__(self, name: str=None, default=None, type: Union[int, str, list, dict]=str):
         self.name = None if name is None else re.sub('[^A-Za-z0-9_]', '', name)
-        self.type = _type(default) if default else type
+        self.type = _type(default) if default is not None else type
         self.attr = default
 
     def __str__(self):
